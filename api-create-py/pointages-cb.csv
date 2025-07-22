@@ -1,0 +1,19 @@
+start;name;type;Practice;director;client;department;kam;business manager;description;business_manager
+11/21/23 13:26:36;anass akrim;PRACTICE (Non refacturé);Structuration Practice;none;none;none;none;none;Support aux Practice pour déploiement Booking / Form;
+9/20/23 9:48:32;anass akrim;PRACTICE (Non refacturé);Weekly;none;none;none;none;none;none;
+10/06/2023 15:17;anass akrim;AVV;none;Antoine SANTONI;Arcelor Mital;Qualité;Thomas LEDERMANN;none;Réponse Technique;
+10/06/2023 15:18;anass akrim;AVV;none;"GHA : Gautier HAASZ (O;P;Q;Z)";Airbus;PO;Armand LANDRY;none;Chiffrage activité GSheet;
+10/06/2023 15:22;Joffrey MALNOY;EXPERTISE;none;Damien BREBAND;Safran;Qualité;Elise GRAS;none;Prise de contact pour activité BI au sein de safran Molsheim;
+10/06/2023 15:24;cherif benham;EXPERTISE;none;Damien BREBAND;Safran;Qualité;Elise GRAS;none;Prise de contact pour activité BI au sein de safran Molsheim;
+10/06/2023 15:25;anass akrim;EXPERTISE;none;"GHA : Gautier HAASZ (O;P;Q;Z)";Airbus;QB;Léo GIAMMARINARO;none;Expertise GSheet;
+10/06/2023 15:26;anass akrim;EXPERTISE;none;"GHA : Gautier HAASZ (O;P;Q;Z)";Airbus;QB;Leo GIAMMARINARO;none;Expertise GSheet;
+10/18/23 11:12:43;cherif benham;EXPERTISE;none;"RJO : Remi JOVE (B;F;H;S)";Airbus;SOEM;Nicolas GOZDIK;none;Debug d'un application looker studio;
+11/14/23 18:20:12;cherif benham;EXPERTISE;none;"RJO : Remi JOVE (B;F;H;S)";Airbus;SOEY;Nicolas GOZDIK;none;Expertise perfo macro Google App Scripte;
+3/27/24 11:52:27;cherif benham;EXPERTISE;none;Pierre DRENO;Airbus;ZZM;Philippe PINAULT;none;Sensibilisation data gouvernance;
+4/24/24 17:39:09;cherif benham;AVV;none;Damien BREBAND;Safran Commercy;Qualité;Elise GRAS;none;RT client;
+5/14/24 18:14:31;Sidney BAKHOUCHE;ECT;none;none;none;none;none;none;none;
+5/14/24 18:23:44;Sidney BAKHOUCHE;AVV;none;"RJO : Remi JOVE (B;F;H;S)";Airbus;BLVO;Pierre-Nicolas LEGRAS;none;Feasibility Study: Extract content from PDF files.;
+5/15/24 15:44:59;Sidney BAKHOUCHE;PRACTICE (Non refacturé);Weekly;none;none;none;none;none;none;
+07/22/25 06:44:14;Jane Doe;EXPERTISE;Weekly;John Smith;Acme Corp;IT;Bob Wilson;none;Test pointage entry;
+07/22/25 06:46:55;Jane Doe;EXPERTISE;Weekly;John Smith;Acme Corp;IT;Bob Wilson;;Test pointage entry;Alice Johnson
+07/22/25 06:51:21;Jane Doe;EXPERTISE;Weekly;John Smith;Acme Corp;IT;Bob Wilson;;Test pointage entry;Alice Johnson
