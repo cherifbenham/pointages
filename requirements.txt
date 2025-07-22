@@ -1,0 +1,14 @@
+pandas
+uvicorn
+fastapi
+httpx
+python-dotenv
+requests
+pydantic
+pytest
+pytest-asyncio
+pytest-cov
+pytest-mock
+pytest-httpx
+pytest-factory
+openai
