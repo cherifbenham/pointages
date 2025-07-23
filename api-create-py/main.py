@@ -1,18 +1,18 @@
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, field_validator
 import pandas as pd
+from fastapi import HTTPException
 from datetime import datetime
-import os
+from fastapi.testclient import TestClient
 
-# --- API setup ---
 app = FastAPI(
     title="Pointages API",
     description="API exposing time logs from CSV file",
     version="1.0.0"
 )
 
-# --- CORS ---
+# Enable public access (CORS)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # open to all
@@ -21,29 +21,28 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- API Key Enforcement ---
-EXPECTED_API_KEY = os.getenv("API_KEY")
 
-@app.middleware("http")
-async def check_api_key(request: Request, call_next):
-    client_key = request.headers.get("x-api-key")
-    if EXPECTED_API_KEY and client_key != EXPECTED_API_KEY:
-        raise HTTPException(status_code=401, detail="Invalid or missing API Key")
-    return await call_next(request)
-
-# --- CSV and DataFrame Initialization ---
+# Ensure DataFrame is always initialized with correct columns
+import os
 CSV_PATH = "pointages-cb.csv"
 COLUMNS = [
-    "start", "name", "type_sollicitation", "practice", "director", "client",
-    "department", "kam", "business_manager", "description"
+    "start",
+    "name",
+    "type_sollicitation",
+    "practice",
+    "director",
+    "client",
+    "department",
+    "kam",
+    "business_manager",
+    "description"
 ]
-
 if os.path.exists(CSV_PATH) and os.path.getsize(CSV_PATH) > 0:
     df = pd.read_csv(CSV_PATH, sep=";")
 else:
     df = pd.DataFrame(columns=COLUMNS)
 
-# --- Pydantic model ---
+# Pydantic model
 class Pointage(BaseModel):
     start: str | None = None
     name: str
@@ -61,13 +60,16 @@ class Pointage(BaseModel):
     def set_start_now(cls, v):
         return v or datetime.now().strftime("%m/%d/%y %H:%M:%S")
 
-# --- Endpoints ---
+
 @app.get("/pointages", response_model=list[Pointage])
 def get_pointages():
+    # Ensure all columns exist
     for col in COLUMNS:
         if col not in df.columns:
             df[col] = None
+    # Convert NaN to None for JSON serialization
     records = df[COLUMNS].where(pd.notnull(df[COLUMNS]), None).to_dict(orient="records")
+    # Ensure type_sollicitation is always a string
     for rec in records:
         if rec["type_sollicitation"] is None:
             rec["type_sollicitation"] = "none"
@@ -91,7 +93,8 @@ def post_pointage(pointage: Pointage):
         }
         new_df = pd.DataFrame([new_record])
         df = pd.concat([df, new_df], ignore_index=True)
-        df.to_csv(CSV_PATH, sep=";", index=False)
+        df.to_csv("pointages-cb.csv", sep=";", index=False)
         return new_record
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error adding record: {str(e)}")
+
