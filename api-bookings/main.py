@@ -34,8 +34,17 @@ async def check_api_key(request: Request, call_next):
 # --- CSV and DataFrame Initialization ---
 CSV_PATH = "pointages-cb.csv"
 COLUMNS = [
-    "start", "name", "type_sollicitation", "practice", "director", "client",
-    "department", "kam", "business_manager", "description"
+    "start", 
+    "name", 
+    "type_sollicitation", 
+    "practice", 
+    "director", 
+    "client",
+    "department", 
+    "kam", 
+    "business_manager", 
+    "description",
+    "confirmed"
 ]
 
 if os.path.exists(CSV_PATH) and os.path.getsize(CSV_PATH) > 0:
@@ -55,6 +64,7 @@ class Pointage(BaseModel):
     kam: str | None = None
     business_manager: str | None = None
     description: str | None = None
+    confirmed: bool | None = None
 
     @field_validator("start", mode="before")
     @classmethod
@@ -64,13 +74,13 @@ class Pointage(BaseModel):
 # --- Endpoints ---
 @app.get("/pointages", response_model=list[Pointage])
 def get_pointages():
-    for col in COLUMNS:
+    # Use Pointage class keys for columns
+    pointage_keys = list(Pointage.model_fields.keys())
+    for col in pointage_keys:
         if col not in df.columns:
             df[col] = None
-    records = df[COLUMNS].where(pd.notnull(df[COLUMNS]), None).to_dict(orient="records")
-    for rec in records:
-        if rec["type_sollicitation"] is None:
-            rec["type_sollicitation"] = "none"
+    records = df[pointage_keys].where(pd.notnull(df[pointage_keys]), None).to_dict(orient="records")
+
     return records
 
 @app.post("/pointages", response_model=Pointage)
@@ -87,7 +97,8 @@ def post_pointage(pointage: Pointage):
             "department": pointage.department or "none",
             "kam": pointage.kam or "none",
             "business_manager": pointage.business_manager or "none",
-            "description": pointage.description or "none"
+            "description": pointage.description or "none",
+            "confirmed": pointage.confirmed or False
         }
         new_df = pd.DataFrame([new_record])
         df = pd.concat([df, new_df], ignore_index=True)
