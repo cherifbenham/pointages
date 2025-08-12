@@ -1,112 +1,124 @@
-import os
-import json
-import requests
-from openai import AzureOpenAI
-from openai.types.beta import FunctionTool
-from openai.types.beta.assistant import ToolDefinition
-from openai.types.beta.threads import MessageContentText
-from openai.types.beta.threads.runs import SubmitToolOutputsRequest
-from openai.types.shared_params import FunctionDefinition
+import streamlit as st
+import pandas as pd
+import io
+import re
 
-# === Azure OpenAI client setup ===
-client = AzureOpenAI(
-    api_key="YOUR_API_KEY",
-    api_version="2024-03-01-preview",
-    azure_endpoint="https://YOUR_RESOURCE_NAME.openai.azure.com/",
-)
+from azure.ai.projects import AIProjectClient
+from azure.identity import DefaultAzureCredential
+from azure.ai.agents.models import ListSortOrder
 
-deployment_id = "YOUR_DEPLOYMENT_NAME"
+# ---- Setup ----
+st.set_page_config(page_title="Azure Agent Chat", layout="wide")
+st.title("🤖 Bookings Agent - l'agent qui crée vos pointages")
 
-# === Tool definition for submit_pointage ===
-submit_pointage_tool = FunctionTool(
-    function=FunctionDefinition(
-        name="submit_pointage",
-        description="Submit a time booking record.",
-        parameters={
-            "type": "object",
-            "properties": {
-                "start": {"type": "string", "description": "Start date/time in ISO format"},
-                "name": {"type": "string", "description": "Full name of the person"},
-                "type_sollicitation": {"type": "string", "description": "Booking type: activité, absence..."},
-                "practice": {"type": "string"},
-                "director": {"type": "string"},
-                "client": {"type": "string"},
-                "department": {"type": "string"},
-                "kam": {"type": "string"},
-                "business_manager": {"type": "string"},
-                "description": {"type": "string"}
-            },
-            "required": ["name", "type_sollicitation"]
-        }
+@st.cache_resource
+def init_agent():
+    client = AIProjectClient(
+        credential=DefaultAzureCredential(),
+        #endpoint="https://ai-foundry-test-01.services.ai.azure.com/api/projects/project",
+        endpoint="https://agents-02.services.ai.azure.com/api/projects/agents02"
+        # --- IGNORE ---
     )
-)
+    # agent = client.agents.get_agent("asst_r0ZZVg6KTwNJN7fqGW25cne5")
+    agent = client.agents.get_agent("asst_yNkkFcW1ULGvxSaqmOR7Vu3A")
+    return client, agent
 
-# === Create the assistant with the tool ===
-assistant = client.beta.assistants.create(
-    name="Pointage Assistant",
-    instructions=(
-        "You help users submit time bookings. Ask for missing details step-by-step. "
-        "When you have all required information, use the `submit_pointage` tool."
-    ),
-    tools=[submit_pointage_tool],
-    model=deployment_id,
-)
+client, agent = init_agent()
 
-# === Create thread ===
-thread = client.beta.threads.create()
+# ---- Session State ----
+if "thread" not in st.session_state:
+    st.session_state.thread = client.agents.threads.create()
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
-# === Initial user message ===
-client.beta.threads.messages.create(
-    thread_id=thread.id,
-    role="user",
-    content="J’ai bossé sur GSK ce matin avec Marc."
-)
+# ---- Display Chat History ----
 
-# === Run the assistant ===
-run = client.beta.threads.runs.create(
-    thread_id=thread.id,
-    assistant_id=assistant.id
-)
+# ---- Clear Session Button ----
+if st.button("🧹 Clear Session"):
+    st.session_state.messages = []
+    st.session_state.thread = client.agents.threads.create()
+    st.experimental_rerun()
 
-# === Poll for completion & handle tool call ===
-while True:
-    run = client.beta.threads.runs.retrieve(thread_id=thread.id, run_id=run.id)
+for msg in st.session_state.messages:
+    with st.chat_message(msg["role"]):
+        st.markdown(msg["content"])
 
-    if run.status == "completed":
-        messages = client.beta.threads.messages.list(thread_id=thread.id)
-        for msg in messages.data:
-            if msg.role == "assistant":
-                for content in msg.content:
-                    if isinstance(content, MessageContentText):
-                        print("🤖", content.text.value)
-        break
+# ---- Chat Input ----
+user_input = st.chat_input("Type your message here...")
 
-    elif run.status == "requires_action":
-        tool_outputs = []
-        for tool_call in run.required_action.submit_tool_outputs.tool_calls:
-            tool_name = tool_call.function.name
-            args = json.loads(tool_call.function.arguments)
+if user_input:
+    # Save + send user message
+    st.session_state.messages.append({"role": "user", "content": user_input})
+    client.agents.messages.create(
+        thread_id=st.session_state.thread.id,
+        role="user",
+        content=user_input
+    )
 
-            print("🛠️ Tool call:", tool_name)
-            print("📦 Arguments:", args)
+    with st.chat_message("user"):
+        st.markdown(user_input)
 
-            # Call your backend API
-            response = requests.post("https://your.api/pointages", json=args)
-            response.raise_for_status()
+    # Call the agent
+    with st.chat_message("assistant"):
+        with st.spinner("Agent is thinking..."):
+            run = client.agents.runs.create_and_process(
+                thread_id=st.session_state.thread.id,
+                agent_id=agent.id
+            )
+            if run.status == "failed":
+                st.error(f"Run failed: {run.last_error}")
+            else:
+                messages = list(client.agents.messages.list(
+                    thread_id=st.session_state.thread.id,
+                    order=ListSortOrder.ASCENDING
+                ))
 
-            # Reply to assistant with the result
-            tool_outputs.append({
-                "tool_call_id": tool_call.id,
-                "output": "✅ Pointage submitted successfully!"
-            })
+                last_agent_msg = next(
+                    (m for m in reversed(messages) if m.role.value == "assistant"),
+                    None
+                )
+                if last_agent_msg:
+                    text = last_agent_msg.text_messages[-1].text.value
+                    st.markdown(text)
+                    st.session_state.messages.append({"role": "assistant", "content": text})
 
-        # Submit tool results back to assistant
-        client.beta.threads.runs.submit_tool_outputs(
-            thread_id=thread.id,
-            run_id=run.id,
-            tool_outputs=tool_outputs
-        )
+                    # Flexible mission parser: dynamically extract columns from named regex groups
+                    def parse_missions(raw_text, pattern):
+                        matches = list(pattern.finditer(raw_text))
+                        data = []
+                        for m in matches:
+                            # Use all named groups found in the match
+                            data.append({k: v.strip() if isinstance(v, str) else v for k, v in m.groupdict().items()})
+                        return pd.DataFrame(data) if data else pd.DataFrame()
 
-    else:
-        import time
-        time.sleep(1)
+                    # Example: user can adjust the pattern to match their mission format
+                    mission_pattern = re.compile(
+                        r"(?P<date>[\d/:\s]+)\s*-\s*(?P<type>[^-]+?) for (?P<client>[^(]+)"
+                        r"\((?P<department>[^)]+)\).*?Director: (?P<director>[^,]+), KAM: (?P<kam>[^.]+)\. Description: (?P<description>.+)"
+                    )
+                    df = parse_missions(text, mission_pattern)
+                    if not df.empty:
+                        st.subheader("📋 Missions Table")
+                        st.dataframe(df)
+
+                        # CSV download
+                        csv = df.to_csv(index=False).encode("utf-8")
+                        st.download_button(
+                            label="📄 Download CSV",
+                            data=csv,
+                            file_name="missions.csv",
+                            mime="text/csv"
+                        )
+
+                        # Excel download
+                        excel_buffer = io.BytesIO()
+                        with pd.ExcelWriter(excel_buffer, engine="xlsxwriter") as writer:
+                            df.to_excel(writer, index=False, sheet_name="Missions")
+                            writer.close()
+
+                        st.download_button(
+                            label="📊 Download Excel",
+                            data=excel_buffer.getvalue(),
+                            file_name="missions.xlsx",
+                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                        )

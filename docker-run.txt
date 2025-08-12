@@ -1,0 +1,11 @@
+lsof -i :8501
+kill -9 21824
+
+docker build -t pointages-app .
+docker run -p 8501:8501 pointages-app
+
+docker tag pointages-app registrycb.azurecr.io/pointages-app:v1
+
+az acr login --name registrycb
+
+docker push registrycb.azurecr.io/pointages-app:v1

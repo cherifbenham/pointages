@@ -12,3 +12,9 @@ pytest-mock
 pytest-httpx
 pytest-factory
 openai
+azure-ai-agents
+azure-identity
+azure-ai-projects
+streamlit
+regex
+xlsxwriter

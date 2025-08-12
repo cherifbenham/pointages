@@ -26,7 +26,8 @@ def test_post_pointage():
         "department": "IT",
         "kam": "Bob Wilson",
         "business_manager": "Alice Johnson",
-        "description": "Test entry from pytest"
+        "description": "Test entry from pytest",
+        "confirmed": True
     }
     response = requests.post("https://pointages.onrender.com/pointages", json=payload, headers=HEADERS)
     assert response.status_code == 200

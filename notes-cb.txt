@@ -1,7 +1,7 @@
-# pointages
+probkeme
+
 
 Unlike Azure OpenAI REST API endpoints (which do support API key headers), the AIProjectClient SDK targets Azure AI Studio / Foundry, which only supports AAD-authenticated identities via Microsoft Entra ID.
 
-## demande faite : 
+demande faite : https://alten.service-now.com/mysupport?id=sc_request&table=sc_request&sys_id=46693b2533472250b5f59ac91e5c7bb5
 
-https://alten.service-now.com/mysupport?id=sc_request&table=sc_request&sys_id=46693b2533472250b5f59ac91e5c7bb5

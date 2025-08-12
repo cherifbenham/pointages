@@ -80,7 +80,6 @@ def get_pointages():
         if col not in df.columns:
             df[col] = None
     records = df[pointage_keys].where(pd.notnull(df[pointage_keys]), None).to_dict(orient="records")
-
     return records
 
 @app.post("/pointages", response_model=Pointage)

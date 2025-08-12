@@ -35,7 +35,8 @@ COLUMNS = [
     "department",
     "kam",
     "business_manager",
-    "description"
+    "description", 
+    "confirmed"
 ]
 if os.path.exists(CSV_PATH) and os.path.getsize(CSV_PATH) > 0:
     df = pd.read_csv(CSV_PATH, sep=";")
@@ -54,6 +55,7 @@ class Pointage(BaseModel):
     kam: str | None = None
     business_manager: str | None = None
     description: str | None = None
+    confirmed: bool | None = None
 
     @field_validator("start", mode="before")
     @classmethod
@@ -89,7 +91,8 @@ def post_pointage(pointage: Pointage):
             "department": pointage.department or "none",
             "kam": pointage.kam or "none",
             "business_manager": pointage.business_manager or "none",
-            "description": pointage.description or "none"
+            "description": pointage.description or "none",
+            "confirmed": pointage.confirmed or False
         }
         new_df = pd.DataFrame([new_record])
         df = pd.concat([df, new_df], ignore_index=True)
