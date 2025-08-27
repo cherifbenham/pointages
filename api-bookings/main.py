@@ -70,6 +70,13 @@ class Pointage(BaseModel):
     @classmethod
     def set_start_now(cls, v):
         return v or datetime.now().strftime("%m/%d/%y %H:%M:%S")
+    
+    @field_validator("confirmed", mode="before")
+    @classmethod
+    def parse_confirmed(cls, v):
+        if isinstance(v, bool):
+            return v
+        return str(v).strip().lower() in ["true", "1", "yes"]
 
 # --- Endpoints ---
 @app.get("/pointages", response_model=list[Pointage])
@@ -80,7 +87,9 @@ def get_pointages():
         if col not in df.columns:
             df[col] = None
     records = df[pointage_keys].where(pd.notnull(df[pointage_keys]), None).to_dict(orient="records")
-    return records
+    # validated = guaranteed clean
+    validated = [Pointage(**rec).model_dump() for rec in records]
+    return validated
 
 @app.post("/pointages", response_model=Pointage)
 def post_pointage(pointage: Pointage):

@@ -2,10 +2,19 @@ import streamlit as st
 import pandas as pd
 import io
 import re
+import os
 
 from azure.ai.projects import AIProjectClient
 from azure.identity import DefaultAzureCredential
 from azure.ai.agents.models import ListSortOrder
+
+from azure.identity import ClientSecretCredential
+
+credential = ClientSecretCredential(
+    tenant_id=os.environ["AZURE_TENANT_ID"],
+    client_id=os.environ["AZURE_CLIENT_ID"],
+    client_secret=os.environ["AZURE_CLIENT_SECRET"]
+)
 
 # ---- Setup ----
 st.set_page_config(page_title="Azure Agent Chat", layout="wide")
@@ -14,7 +23,8 @@ st.title("🤖 Bookings Agent - l'agent qui crée vos pointages")
 @st.cache_resource
 def init_agent():
     client = AIProjectClient(
-        credential=DefaultAzureCredential(),
+        #credential=DefaultAzureCredential(),
+        credential=credential,
         #endpoint="https://ai-foundry-test-01.services.ai.azure.com/api/projects/project",
         endpoint="https://agents-02.services.ai.azure.com/api/projects/agents02"
         # --- IGNORE ---
