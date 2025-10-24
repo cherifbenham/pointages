@@ -59,8 +59,8 @@ class Pointage(BaseModel):
     start: str | None = None
     name: str
     type_sollicitation: str
-    practice: str | None = None
-    director: str | None = None
+    practice: str | None = None # email - practice
+    director: str | None = None # kam - director
     client: str | None = None
     department: str | None = None
     kam: str | None = None

@@ -18,3 +18,4 @@ azure-ai-projects
 streamlit
 regex
 xlsxwriter
+msal

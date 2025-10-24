@@ -9,22 +9,29 @@ from azure.identity import DefaultAzureCredential
 from azure.ai.agents.models import ListSortOrder
 
 from azure.identity import ClientSecretCredential
+from dotenv import load_dotenv
 
-credential = ClientSecretCredential(
-    tenant_id=os.environ["AZURE_TENANT_ID"],
-    client_id=os.environ["AZURE_CLIENT_ID"],
-    client_secret=os.environ["AZURE_CLIENT_SECRET"]
+load_dotenv()
+
+credential_cloud = ClientSecretCredential(
+    tenant_id=os.getenv("AZURE_TENANT_ID"),
+    client_id=os.getenv("AZURE_CLIENT_ID"),
+    client_secret=os.getenv("AZURE_CLIENT_SECRET")
 )
+
+# Use DefaultAzureCredential but ignore env-based credentials to avoid
+# unintentionally using the service principal loaded from .env.
+credential_on_prem = DefaultAzureCredential(exclude_environment_credential=True)
 
 # ---- Setup ----
 st.set_page_config(page_title="Azure Agent Chat", layout="wide")
 st.title("🤖 Bookings Agent - l'agent qui crée vos pointages")
+st.caption("Auth: DefaultAzureCredential (environment credentials excluded)")
 
 @st.cache_resource
 def init_agent():
     client = AIProjectClient(
-        #credential=DefaultAzureCredential(),
-        credential=credential,
+        credential=credential_cloud,
         #endpoint="https://ai-foundry-test-01.services.ai.azure.com/api/projects/project",
         endpoint="https://agents-02.services.ai.azure.com/api/projects/agents02"
         # --- IGNORE ---
